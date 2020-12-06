@@ -7,6 +7,8 @@
 #include "FPSExtractionZone.generated.h"
 
 class UBoxComponent;
+class UDecalComponent;
+class USoundBase;
 
 UCLASS()
 class FPSGAME_API AFPSExtractionZone : public AActor
@@ -18,14 +20,21 @@ public:
 	AFPSExtractionZone();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	UPROPERTY(EditAnywhere, Category = "Components")
+		UBoxComponent* OverlapComp;
 
 	UPROPERTY(EditAnywhere, Category = "Components")
-	UBoxComponent* OverlapComp;
+		UDecalComponent* DecalComp;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	UFUNCTION()
+		void HandleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
+			UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, 
+			bool bFromSweep, const FHitResult& SweepResult);
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+		USoundBase* ObjectiveMissingSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+		USoundBase* ObjectiveCompleteSound;
 
 };
