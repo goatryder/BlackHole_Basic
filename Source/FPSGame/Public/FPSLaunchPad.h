@@ -47,9 +47,12 @@ protected:
 		float LaunchCooldown=0.f;
 
 	float LaunchCooldownAccumulation;
+	bool bIsOnCooldown;
 
 	UPROPERTY(EditAnywhere, Category = "LaunchParams")
 		FVector LaunchVelocity = FVector(1000.0f, 0.0f, 1000.f);
+
+	void SwapDecals(bool Cooldown);
 
 	UFUNCTION()
 		void BoxCompBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,

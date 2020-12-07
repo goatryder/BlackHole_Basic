@@ -75,21 +75,71 @@ AFPSLaunchPad::AFPSLaunchPad()
 		Decal_Launched->SetMaterial(0, FoundMaterial3.Object);
 	// end decals
 
-	//LaunchVelocity
-	UE_LOG(LogTemp, Warning, TEXT("Magnitude before: %f"), LaunchVelocity.Size());
-	LaunchVelocity = FVector::DotProduct(FVector::ForwardVector, GetActorRightVector()) * LaunchVelocity;
-	UE_LOG(LogTemp, Warning, TEXT("Magnitude after: %f"), LaunchVelocity.Size());
-
 }
 
 void AFPSLaunchPad::BeginPlay()
 {
 	Super::BeginPlay();
+
+	/*
+	FVector Start = GetActorLocation();
+
+	FVector ArrowFinish = LaunchArrow->GetForwardVector() * 300.0f + Start;
+	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, ArrowFinish, FLinearColor::Yellow, 22222222222221.0f);
+
+	FVector NormalFinish = FVector::ForwardVector * 300.0f + Start;
+	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, NormalFinish, FLinearColor::White, 22222222222221.0f);
+
+	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, Start + LaunchVelocity, FLinearColor::Green, 22222222222221.0f);
+
+	float DotProduct = FVector::DotProduct(LaunchArrow->GetForwardVector(), FVector::ForwardVector);
+	float Angle = FMath::RadiansToDegrees(FMath::Acos(DotProduct));
+	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, Start + LaunchVelocity.RotateAngleAxis(Angle, FVector::UpVector), FLinearColor::Red, 22222222222221.0f);
+
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("angle  %f"), Angle));
+	*/
+
+	// GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, *FString::Printf(TEXT("Magnitude before: %f, %s"), LaunchVelocity.Size(), *LaunchVelocity.ToString()));
+
+	LaunchVelocity = LaunchVelocity.RotateAngleAxis(
+		FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(LaunchArrow->GetForwardVector(), FVector::ForwardVector))),
+		FVector::UpVector
+	);
+
+	// GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, *FString::Printf(TEXT("Magnitude after: %f, %s"), LaunchVelocity.Size(), *LaunchVelocity.ToString()));
+
 }
 
 void AFPSLaunchPad::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	/*
+	FVector ZOffset = FVector(0.0f, 0.0f, 50.0f);
+	FVector Start = GetActorLocation() + ZOffset;
+	
+	FVector ArrowFinish = LaunchArrow->GetForwardVector() * 300.0f + Start;
+	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, ArrowFinish, FLinearColor::Yellow, 1);
+	
+	FVector NormalFinish = FVector::ForwardVector * 300.0f + Start;
+	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, NormalFinish, FLinearColor::White, 1);
+
+	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, Start + LaunchVelocity, FLinearColor::Green, 1);
+
+	float DotProduct = FVector::DotProduct(LaunchArrow->GetForwardVector(), FVector::ForwardVector);
+	float Angle = FMath::RadiansToDegrees(FMath::Acos(DotProduct));
+	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, Start + LaunchVelocity.RotateAngleAxis(Angle, FVector::UpVector), FLinearColor::Red, 1);
+
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("angle  %f"), Angle));*/
+	
+}
+
+void AFPSLaunchPad::SwapDecals(bool Cooldown)
+{
+
+	Decal_Launched->SetVisibility(Cooldown);
+	Decal_Idle->SetVisibility(!Cooldown);
+
 }
 
 void AFPSLaunchPad::BoxCompBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -103,9 +153,7 @@ void AFPSLaunchPad::BoxCompBeginOverlap(UPrimitiveComponent* OverlappedComp, AAc
 
 	if (Character) {
 
-		Character->LaunchCharacter(LaunchVelocity, false, false);
-
-		UKismetSystemLibrary::DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + LaunchVelocity, FLinearColor::Green, 2222222222.0f);
+		Character->LaunchCharacter(LaunchVelocity, true, true);
 
 	} 
 	else if (OtherComp->IsSimulatingPhysics()) {
@@ -113,5 +161,17 @@ void AFPSLaunchPad::BoxCompBeginOverlap(UPrimitiveComponent* OverlappedComp, AAc
 		OtherComp->AddForce(LaunchVelocity);
 
 	}
+	else {
 
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("overlapped obj cannot be launched")));
+		return;
+	}
+
+	LaunchSound->Activate(true);
+
+	bIsOnCooldown = true;
+	SwapDecals(true);
+
+	/*FTimerHandle UnusedTimeHandle;
+	GetWorldTimerManager().SetTimer(UnusedTimeHandle, this, &AFPSLaunchPad::SwapDecals, 1.0f);*/
 }
