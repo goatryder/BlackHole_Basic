@@ -37,6 +37,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "SuckConfig")
 		float AttractForce = -4096.f;
 
+	UPROPERTY(EditAnywhere, Category = "SuckConfig")
+		bool bEnableBlackHole;
+
+	UPROPERTY(EditAnywhere, Category = "SuckConfig")
+		bool bCanEnableByProjectile = true;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

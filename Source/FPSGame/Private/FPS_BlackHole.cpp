@@ -5,6 +5,8 @@
 
 #include "Components/SphereComponent.h"
 
+#include "FPSProjectile.h"
+
 // Sets default values
 AFPS_BlackHole::AFPS_BlackHole()
 {
@@ -40,8 +42,15 @@ void AFPS_BlackHole::OnSuckSphereOverlapBegin(UPrimitiveComponent* OverlappedCom
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 
-	if (!ActorsToSuckInitScaleMap.Contains(OtherActor))
+	if (!bEnableBlackHole && bCanEnableByProjectile && Cast<AFPSProjectile>(OtherActor)) {
+
+		bEnableBlackHole = true;
+	}
+	else if (!ActorsToSuckInitScaleMap.Contains(OtherActor)) {
+		
 		ActorsToSuckInitScaleMap.Add(OtherActor, OtherActor->GetActorScale3D());
+	
+	}
 	/*
 	FVector ActorToSuckInitScale = ActorsToSuckInitScaleMap[OtherActor];
 
@@ -61,6 +70,9 @@ void AFPS_BlackHole::OnSuckSphereOverlapBegin(UPrimitiveComponent* OverlappedCom
 void AFPS_BlackHole::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (!bEnableBlackHole)
+		return;
 
 	TArray<UPrimitiveComponent*>OverlappedComps;
 

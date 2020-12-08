@@ -1,12 +1,16 @@
 // Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 
 #include "FPSCharacter.h"
-#include "FPSProjectile.h"
+
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/PawnNoiseEmitterComponent.h"
+#include "PhysicsEngine/PhysicsHandleComponent.h"
 
+#include "FPSProjectile.h"
+#include "Grabber.h"
 
 AFPSCharacter::AFPSCharacter()
 {
@@ -27,6 +31,14 @@ AFPSCharacter::AFPSCharacter()
 	GunMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP_Gun"));
 	GunMeshComponent->CastShadow = false;
 	GunMeshComponent->SetupAttachment(Mesh1PComponent, "GripPoint");
+
+	// Grabber
+	PhysicsHandleComp = CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("GrabberPhysicsHandle"));
+	GrabberComp = CreateDefaultSubobject<UGrabber>(TEXT("GrabberComp"));
+
+	// Noise
+	NoiseEmitterComponent = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("NoiseEmitter"));
+
 }
 
 

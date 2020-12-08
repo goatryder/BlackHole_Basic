@@ -12,6 +12,9 @@ class UCameraComponent;
 class AFPSProjectile;
 class USoundBase;
 class UAnimSequence;
+class UPawnNoiseEmitterComponent;
+class UGrabber;
+class UPhysicsHandleComponent;
 
 
 UCLASS()
@@ -33,6 +36,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent* CameraComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
+	UPawnNoiseEmitterComponent* NoiseEmitterComponent;
+
 public:
 	AFPSCharacter();
 
@@ -48,8 +54,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Gameplay")
 	UAnimSequence* FireAnimation;
 
+	UPROPERTY(EditAnywhere, Category = "Grabber")
+	UPhysicsHandleComponent* PhysicsHandleComp;
+
+	UPROPERTY(EditAnywhere, Category = "Grabber")
+	UGrabber* GrabberComp;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Gameplay")
-		bool bIsCarryingObjective;
+	bool bIsCarryingObjective;
 
 protected:
 	

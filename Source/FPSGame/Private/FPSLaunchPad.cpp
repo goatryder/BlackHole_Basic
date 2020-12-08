@@ -8,6 +8,7 @@
 #include "Components/DecalComponent.h"
 #include "Components/AudioComponent.h"
 #include "Components/ArrowComponent.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "FPSCharacter.h"
 
@@ -75,6 +76,12 @@ AFPSLaunchPad::AFPSLaunchPad()
 		Decal_Launched->SetMaterial(0, FoundMaterial3.Object);
 	// end decals
 
+	// particle
+	LaunchFX = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("LaunchFX"));
+	LaunchFX->SetupAttachment(RootComponent);
+	LaunchFX->bAutoActivate = false;
+	// end particle
+
 }
 
 void AFPSLaunchPad::BeginPlay()
@@ -101,10 +108,14 @@ void AFPSLaunchPad::BeginPlay()
 
 	// GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, *FString::Printf(TEXT("Magnitude before: %f, %s"), LaunchVelocity.Size(), *LaunchVelocity.ToString()));
 
-	LaunchVelocity = LaunchVelocity.RotateAngleAxis(
-		FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(LaunchArrow->GetForwardVector(), FVector::ForwardVector))),
-		FVector::UpVector
-	);
+	
+	float DotProduct = FVector::DotProduct(LaunchArrow->GetForwardVector(), FVector::ForwardVector);
+	FVector CrossProduct =  FVector::CrossProduct(LaunchArrow->GetForwardVector(), FVector::ForwardVector);
+
+	float AngleDir = FMath::Sign(FVector::DotProduct(CrossProduct, FVector::DownVector));
+	float Angle = FMath::RadiansToDegrees(FMath::Acos(DotProduct));
+
+	LaunchVelocity = LaunchVelocity.RotateAngleAxis(Angle * AngleDir, FVector::UpVector);
 
 	// GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, *FString::Printf(TEXT("Magnitude after: %f, %s"), LaunchVelocity.Size(), *LaunchVelocity.ToString()));
 
@@ -113,6 +124,22 @@ void AFPSLaunchPad::BeginPlay()
 void AFPSLaunchPad::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// handle cooldown
+
+	if (bIsOnCooldown) {
+
+		LaunchCooldownAccumulation += DeltaTime;
+
+		if (LaunchCooldownAccumulation > LaunchCooldown) {
+			bIsOnCooldown = false;
+			LaunchCooldownAccumulation = 0.0f;
+			SwapDecals(false);
+		}
+
+	}
+
+	// end handle cooldown
 
 	/*
 	FVector ZOffset = FVector(0.0f, 0.0f, 50.0f);
@@ -127,11 +154,15 @@ void AFPSLaunchPad::Tick(float DeltaTime)
 	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, Start + LaunchVelocity, FLinearColor::Green, 1);
 
 	float DotProduct = FVector::DotProduct(LaunchArrow->GetForwardVector(), FVector::ForwardVector);
-	float Angle = FMath::RadiansToDegrees(FMath::Acos(DotProduct));
+	FVector CrossProduct = FVector::CrossProduct(LaunchArrow->GetForwardVector(), FVector::ForwardVector);
+
+	float AngleDir = FMath::Sign(FVector::DotProduct(CrossProduct, FVector::DownVector));
+
+	float Angle = FMath::RadiansToDegrees(FMath::Acos(DotProduct)) * AngleDir;
 	UKismetSystemLibrary::DrawDebugLine(GetWorld(), Start, Start + LaunchVelocity.RotateAngleAxis(Angle, FVector::UpVector), FLinearColor::Red, 1);
 
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("angle  %f"), Angle));*/
-	
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("angle  %f"), Angle));
+	*/
 }
 
 void AFPSLaunchPad::SwapDecals(bool Cooldown)
@@ -147,9 +178,12 @@ void AFPSLaunchPad::BoxCompBeginOverlap(UPrimitiveComponent* OverlappedComp, AAc
 	const FHitResult& SweepResult)
 {
 
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, *FString::Printf(TEXT("overlap launchpad box")));
+	// GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, *FString::Printf(TEXT("overlap launchpad box")));
 
 	AFPSCharacter* Character = Cast<AFPSCharacter>(OtherActor);
+
+	if (bIsOnCooldown)
+		return;
 
 	if (Character) {
 
@@ -158,7 +192,7 @@ void AFPSLaunchPad::BoxCompBeginOverlap(UPrimitiveComponent* OverlappedComp, AAc
 	} 
 	else if (OtherComp->IsSimulatingPhysics()) {
 
-		OtherComp->AddForce(LaunchVelocity);
+		OtherComp->AddImpulse(LaunchVelocity, NAME_None, true);
 
 	}
 	else {
@@ -168,6 +202,7 @@ void AFPSLaunchPad::BoxCompBeginOverlap(UPrimitiveComponent* OverlappedComp, AAc
 	}
 
 	LaunchSound->Activate(true);
+	LaunchFX->Activate(true);
 
 	bIsOnCooldown = true;
 	SwapDecals(true);

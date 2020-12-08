@@ -11,6 +11,7 @@ class UStaticMeshComponent;
 class UDecalComponent;
 class UAudioComponent;
 class UArrowComponent;
+class UParticleSystemComponent;
 
 UCLASS()
 class FPSGAME_API AFPSLaunchPad : public AActor
@@ -40,11 +41,14 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Components")
 		UDecalComponent* Decal_Idle;
 
-	UPROPERTY(EditAnywhere, Category = "Sounds")
+	UPROPERTY(EditAnywhere, Category = "Components")
 		UAudioComponent* LaunchSound;
 
+	UPROPERTY(EditAnywhere, Category = "Components")
+		UParticleSystemComponent* LaunchFX;
+
 	UPROPERTY(EditAnywhere, Category = "LaunchParams")
-		float LaunchCooldown=0.f;
+		float LaunchCooldown=1.f;
 
 	float LaunchCooldownAccumulation;
 	bool bIsOnCooldown;
