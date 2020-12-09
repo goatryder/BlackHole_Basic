@@ -54,7 +54,7 @@ void AFPSExtractionZone::HandleOverlap(UPrimitiveComponent* OverlappedComp, AAct
 
 		if (GM) {
 
-			GM->CompleteMission(Char);
+			GM->CompleteMission(Char, true);
 
 		}
 

@@ -41,4 +41,8 @@ void AFPSProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 
 		Destroy();
 	}
+
+	// GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("Make Noise Projectile, Instiagtor: %s"), *GetInstigator()->GetName()));
+
+	MakeNoise(1.0f, GetInstigator());
 }
