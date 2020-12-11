@@ -20,7 +20,6 @@ AFPSAIGuard::AFPSAIGuard()
 	PawnSensingComp->OnHearNoise.AddDynamic(this, &AFPSAIGuard::OnHearNoiseEvent);
 
 	AIControllerClass = AIClass;
-
 	// TODO: VISIBILITY LOST CHASING DELAY
 }
 
@@ -70,11 +69,16 @@ void AFPSAIGuard::OnPawnSeen(APawn* SeenPawn)
 	} // chase player
 	
 	else {
-	
-		AFPSGameMode* GM = Cast<AFPSGameMode>(GetWorld()->GetAuthGameMode());
 
-		if (GM && SeenPawn)
-			GM->CompleteMission(SeenPawn, false);
+		if (bFailMissionWhenPlayerSpotted)
+		{
+
+			AFPSGameMode* GM = Cast<AFPSGameMode>(GetWorld()->GetAuthGameMode());
+
+			if (GM && SeenPawn)
+				GM->CompleteMission(SeenPawn, false);
+
+		}
 
 	} // game over
 }
@@ -139,7 +143,7 @@ void AFPSAIGuard::SetGuardState(EAIState NewState)
 
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("NewState: %d"), NewState));
+	// GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::White, *FString::Printf(TEXT("NewState: %d"), NewState));
 
 	GuardState = NewState;
 
@@ -167,8 +171,8 @@ void AFPSAIGuard::MoveToTarget(AActor* TargetActor, float AcceptanceRadius)
 void AFPSAIGuard::SetPatrolling(bool bPatrolling, bool bStopImmediately = false)
 {
 
-
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("Patrol")));
+	if (bDebugPrint)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("Patrol")));
 
 	if (!bCanPatrol) {
 
@@ -212,6 +216,11 @@ void AFPSAIGuard::ChasePlayer()
 
 	GetCharacterMovement()->MaxWalkSpeed = ChassingSpeed;
 
+	//TimerHandle_CheckPlayerInSight.Invalidate();
+
+	//TimerHandle_CheckPlayerInSight = FTimerHandle();
+	//GetWorldTimerManager().ClearTimer(TimerHandle_CheckPlayerInSight);
+	//GetWorldTimerManager().SetTimer(TimerHandle_CheckPlayerInSight, this, &AFPSAIGuard::CheckPlayerInSight, CheckIfSpottedTargetInSightDelay, true);
 
 }
 
@@ -232,6 +241,52 @@ void AFPSAIGuard::MoveBackToGuardPoint()
 
 }
 
+void AFPSAIGuard::ChaseCompleteHandle()
+{
+
+	if (GuardState != EAIState::LooseChassingTarget)
+		return;
+
+	if (PawnSensingComp->HasLineOfSightTo(PlayerPawnREF)) {
+
+		if (bDebugPrint)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Player Stil In Sight, NEXT: Chase")));
+
+
+		GetWorldTimerManager().ClearTimer(TimerHandle_MoveTo);
+		GetWorldTimerManager().SetTimer(TimerHandle_MoveTo, this, &AFPSAIGuard::ChasePlayer, 0.1f);
+
+		// ChasePlayer();
+
+	}
+	else {
+		
+		// TimerHandle_CheckPlayerInSight.Invalidate();
+
+		if (bCanPatrol) {
+
+			if (bDebugPrint)
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("Player Loose Sight, NEXT: Patrol")));
+			
+			GetWorldTimerManager().ClearTimer(TimerHandle_MoveTo);
+			GetWorldTimerManager().SetTimer(TimerHandle_MoveTo, this, &AFPSAIGuard::ContinuePatrolling, MoveToNextPatrolPointDelay);
+
+		}
+
+		else {
+
+			if (bDebugPrint)
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("Player Loose Sight, NEXT: Back To Guard Post")));
+
+			GetWorldTimerManager().ClearTimer(TimerHandle_MoveTo);
+			GetWorldTimerManager().SetTimer(TimerHandle_MoveTo, this, &AFPSAIGuard::MoveBackToGuardPoint, MoveToNextPatrolPointDelay);
+
+		}
+
+	}
+
+}
+
 void AFPSAIGuard::OnAIMoveComplete(FAIRequestID RequestID, EPathFollowingResult::Type Result)
 {
 
@@ -241,7 +296,9 @@ void AFPSAIGuard::OnAIMoveComplete(FAIRequestID RequestID, EPathFollowingResult:
 
 		if (bCanPatrol) {
 			
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Patrol Point Reached, NEXT: Patrol")));
+			if (bDebugPrint)
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::White, *FString::Printf(TEXT("Patrol Point Reached, NEXT: Patrol")));
+			
 			GetWorldTimerManager().ClearTimer(TimerHandle_MoveTo);
 			GetWorldTimerManager().SetTimer(TimerHandle_MoveTo, this, &AFPSAIGuard::ContinuePatrolling, MoveToNextPatrolPointDelay);
 		
@@ -249,8 +306,11 @@ void AFPSAIGuard::OnAIMoveComplete(FAIRequestID RequestID, EPathFollowingResult:
 
 		else {
 
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Patrol Point Reached, NEXT: Back To Guard Post")));
-			MoveBackToGuardPoint();
+			if (bDebugPrint)
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::White, *FString::Printf(TEXT("Patrol Point Reached, NEXT: Back To Guard Post")));
+			
+			GetWorldTimerManager().ClearTimer(TimerHandle_MoveTo);
+			GetWorldTimerManager().SetTimer(TimerHandle_MoveTo, this, &AFPSAIGuard::MoveBackToGuardPoint, MoveToNextPatrolPointDelay);
 		
 		}
 	
@@ -258,11 +318,15 @@ void AFPSAIGuard::OnAIMoveComplete(FAIRequestID RequestID, EPathFollowingResult:
 
 	else if (GuardState == EAIState::ChassingTarget) {
 
+		if (bDebugPrint)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::White, *FString::Printf(TEXT("Chassing Player Complete, Reset Speed")));
+
 		GetCharacterMovement()->MaxWalkSpeed = BaseSpeed;
 
-		if (Result == EPathFollowingResult::Success) {
-			
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Chassing Player Success, Player Cached, Game Over")));
+		if (Result == EPathFollowingResult::Success && bFailMissionWheChasedPlayerCached) {
+
+			if (bDebugPrint)
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::White, *FString::Printf(TEXT("Chassing Player Success, Player Cached, Game Over")));
 
 			AFPSGameMode* GM = Cast<AFPSGameMode>(GetWorld()->GetAuthGameMode());  
 
@@ -276,31 +340,48 @@ void AFPSAIGuard::OnAIMoveComplete(FAIRequestID RequestID, EPathFollowingResult:
 
 		else {
 
-			if (bCanPatrol) {
-				
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Chassing Player Fail, NEXT: Patrol")));
-				GetWorldTimerManager().ClearTimer(TimerHandle_MoveTo);
-				GetWorldTimerManager().SetTimer(TimerHandle_MoveTo, this, &AFPSAIGuard::ContinuePatrolling, MoveToNextPatrolPointDelay);
+			if (bDebugPrint)
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::White, *FString::Printf(TEXT("Chassing Player Fail, Check if Can Chase")));
+			
+			SetGuardState(EAIState::LooseChassingTarget);
 
-			}
+			GetWorldTimerManager().ClearTimer(TimerHandle_CheckPlayerInSight);
+			GetWorldTimerManager().SetTimer(TimerHandle_CheckPlayerInSight, this, &AFPSAIGuard::ChaseCompleteHandle, 0.5f);
 
-			else {
-
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Chassing Player Fail, NEXT: Back To Guard Post")));
-				MoveBackToGuardPoint();
-
-			}
-
-		}
+		} // handle chase fail
 
 	} // chassing moving complete
 
 	else if (GuardState == EAIState::MovingBackToGuardPoint) {
 
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Moved back Guard Post, NEXT: Reset Orientation")));
+		if (bDebugPrint)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::White, *FString::Printf(TEXT("Moved back Guard Post, NEXT: Reset Orientation")));
+		
 		ResetOrientation();
 
 	} // moving back to guard point complete
+
+}
+
+void AFPSAIGuard::UpdateSightProgressBarVal(float Delta)
+{
+
+	LostVisualDelta += Delta;
+
+	// clamp
+	if (LostVisualDelta >= TargetVisualSensetivity)
+		LostVisualDelta = TargetVisualSensetivity;
+	
+	else if (LostVisualDelta <= 0.0f)
+		LostVisualDelta = 0.0f;
+	//
+
+	// progress bar
+	if (LostVisualDelta == 0.0f)
+		SightProgressBarVal = 0.0f;
+	else
+		SightProgressBarVal = LostVisualDelta / TargetVisualSensetivity;
+	//
 
 }
 
@@ -309,12 +390,46 @@ void AFPSAIGuard::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-}
+	bool bCanSee = PawnSensingComp->HasLineOfSightTo(PlayerPawnREF);
 
-// Called to bind functionality to input
-void AFPSAIGuard::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	bTestCanSeePlayer = bCanSee;
+
+	if (bCanSee) {
+
+		if (bDebugPrint)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Can See")));
+
+		//UpdateSightProgressBarVal(DeltaTime);
+
+	}
+		
+	else {
+
+		if (bDebugPrint)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Can't See")));
+
+		//UpdateSightProgressBarVal(-DeltaTime);
+
+	}
+
+	//if (bDebugPrint)
+	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Lost Visual Delta %f"), LostVisualDelta));
+
+
+
+	//if (bDebugPrint && bCanSee != bTestCanSeePlayer) {
+
+	//	if (bCanSee) {
+
+	//		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Can See")));
+	//		
+	//	}
+	//	else {
+
+	//		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("Can't See")));
+	//		
+	//	}
+	//}
 
 }
 

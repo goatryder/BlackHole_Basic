@@ -22,7 +22,8 @@ enum class EAIState : uint8
 	Alerted,
 	Patrolling,
 	ChassingTarget,
-	MovingBackToGuardPoint
+	MovingBackToGuardPoint,
+	LooseChassingTarget
 };
 
 
@@ -39,7 +40,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UPROPERTY(EditAnywhere, Category = "Components")
 		UPawnSensingComponent* PawnSensingComp;
 
 	UFUNCTION()
@@ -54,6 +55,18 @@ protected:
 	UFUNCTION()
 		void ResetOrientation();
 
+	UPROPERTY(EditAnywhere, Category = "AI")
+		bool bDebugPrint;
+
+	UPROPERTY(EditAnywhere, Category = "AI")
+		float BaseSpeed = 375.0f;
+
+	UPROPERTY(EditAnywhere, Category = "AI")
+		float NoPatrolResetOrientationAfterNoiseDelay = 3.0f;
+
+	UPROPERTY(EditAnywhere, Category = "AI")
+		TSubclassOf<AFPSAIGuardController> AIClass = AFPSAIGuardController::StaticClass();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
 		EAIState GuardState;
 
@@ -61,54 +74,48 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "AI")
 		void OnStateChanged(EAIState NewState);
-
+	
 	UPROPERTY(EditAnywhere, Category = "AI")
-		AActor* PatrolPointStart;
-
-	UPROPERTY(EditAnywhere, Category = "AI")
-		AActor* PatrolPointEnd;
+		bool bFailMissionWhenPlayerSpotted;
 
 	UPROPERTY(EditAnywhere, Category = "AI")
 		bool bCanPatrol = true;
+	
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanPatrol"))
+		AActor* PatrolPointStart;
 
-	UPROPERTY(EditAnywhere, Category = "AI")
-		bool bStopPatrollingWhenSuspicios = true;
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanPatrol"))
+		AActor* PatrolPointEnd;
 
-	UPROPERTY(EditAnywhere, Category = "AI")
-		bool bMoveToTargetWhenAlerted = true;
-
-	UPROPERTY(EditAnywhere, Category = "AI")
-		TSubclassOf<AFPSAIGuardController> AIClass = AFPSAIGuardController::StaticClass();
-
-	UPROPERTY(EditAnywhere, Category = "AI")
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanPatrol"))
 		float PatrolPointAcceptanceRadius = 5.0f;
 
-	UPROPERTY(EditAnywhere, Category = "AI")
-		float ChasingActorAcceptanceRadius = 50.0f;
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanPatrol"))
+		bool bStopPatrollingWhenSuspicios = true;
 
-	UPROPERTY(EditAnywhere, Category = "AI")
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanPatrol"))
 		float MoveToNextPatrolPointDelay = 1.0f;
 
-	UPROPERTY(EditAnywhere, Category = "AI")
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanPatrol"))
 		float ContinuePatrollingAfterSuspiciousDelay = 1.0f;
-
-	UPROPERTY(EditAnywhere, Category = "AI")
-		float NoPatrolResetOrientationAfterNoiseDelay = 3.0f;
 
 	UPROPERTY(EditAnywhere, Category = "AI")
 		bool bCanChasePlayerWhenSpotted = true;
 
-	UPROPERTY(EditAnywhere, Category = "AI")
-		bool StopChassingAfterLooseTargetSightDelay = 1.0f;
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanChasePlayerWhenSpotted"))
+		bool bFailMissionWheChasedPlayerCached = true;
 
-	UPROPERTY(EditAnywhere, Category = "AI")
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanChasePlayerWhenSpotted"))
+		float ChasingActorAcceptanceRadius = 50.0f;
+
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanChasePlayerWhenSpotted"))
 		bool AlertedToChassingDelay = 1.0f;
 
-	UPROPERTY(EditAnywhere, Category = "AI")
-		float BaseSpeed = 375.0f;
-
-	UPROPERTY(EditAnywhere, Category = "AI")
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanChasePlayerWhenSpotted"))
 		float ChassingSpeed = 520.0f;
+
+	UPROPERTY(EditAnywhere, Category = "AI", meta = (EditCondition = "bCanChasePlayerWhenSpotted"))
+		float TargetVisualSensetivity = 2.0f;
 
 	AFPSAIGuardController* AIGuardController;
 
@@ -128,15 +135,25 @@ protected:
 	void MoveBackToGuardPoint();
 
 	UFUNCTION()
+		void ChaseCompleteHandle();
+
+	UFUNCTION()
 		void OnAIMoveComplete(FAIRequestID RequestID, EPathFollowingResult::Type Result);
 	
+	bool bTestCanSeePlayer;
+
+	float LostVisualDelta;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Widgets")
+		float SightProgressBarVal = 0.f;
+
+	void UpdateSightProgressBarVal(float Delta);
+
 	FTimerHandle TimerHandle_MoveTo;
+	FTimerHandle TimerHandle_CheckPlayerInSight;
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 };
