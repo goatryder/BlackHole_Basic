@@ -142,15 +142,23 @@ protected:
 	
 	bool bTestCanSeePlayer;
 
+	// not used
 	float LostVisualDelta;
-
+	
 	UPROPERTY(BlueprintReadOnly, Category = "Widgets")
+		bool bShowSightProgressBar;
+
+	// not used
+	UPROPERTY(BlueprintReadOnly, Category = "Widgets", meta = (EditCondition = "bShowSightProgressBar"))
 		float SightProgressBarVal = 0.f;
 
+	// not used
 	void UpdateSightProgressBarVal(float Delta);
 
 	FTimerHandle TimerHandle_MoveTo;
 	FTimerHandle TimerHandle_CheckPlayerInSight;
+
+	
 
 public:	
 	// Called every frame

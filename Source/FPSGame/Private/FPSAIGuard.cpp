@@ -390,6 +390,8 @@ void AFPSAIGuard::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	/*
+
 	bool bCanSee = PawnSensingComp->HasLineOfSightTo(PlayerPawnREF);
 
 	bTestCanSeePlayer = bCanSee;
@@ -410,7 +412,7 @@ void AFPSAIGuard::Tick(float DeltaTime)
 
 		//UpdateSightProgressBarVal(-DeltaTime);
 
-	}
+	} */
 
 	//if (bDebugPrint)
 	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, *FString::Printf(TEXT("Lost Visual Delta %f"), LostVisualDelta));

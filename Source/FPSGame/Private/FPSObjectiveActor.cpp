@@ -28,12 +28,15 @@ AFPSObjectiveActor::AFPSObjectiveActor()
 
 	PickupTimeAccomulation = PickupDestroyTime;
 	InitScale = GetActorScale3D();
+
 }
 
 // Called when the game starts or when spawned
 void AFPSObjectiveActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	InitialZLocation = GetActorLocation().Z;
 
 }
 
@@ -74,6 +77,43 @@ void AFPSObjectiveActor::Tick(float DeltaTime)
 
 		}
 	}
+	else if (bShouldRotate) {
+
+		RotateYawMoveZ(DeltaTime);
+
+	}
+
+}
+
+void AFPSObjectiveActor::RotateYawMoveZ(float DeltaTime)
+{
+	// rotate yaw
+
+	FRotator Rotation = GetActorRotation();
+	Rotation.Yaw += DeltaTime * RotationYawSpeed;
+	SetActorRotation(Rotation);
+
+	// Calc Delta Time To Float Movement For Move Up or Down Only When We Make 180 Rotation
+
+	float FloatMovementDelta = RotationYawSpeed / 90.f * DeltaTime; // multiplyed by to, cos we move to -20 and to 20, so it's double distance and shoold be double speed
+
+	// UE_LOG(LogTemp, Warning, TEXT("rotation delta %f, move delta %f"), DeltaTime, FloatMovementDelta);
+
+	// float movement on z axis
+
+	FVector ActorLoc = GetActorLocation();
+
+	if (ActorLoc.Z > InitialZLocation + OnRotationMoveZMagnitude)
+		bOnRotationMoveZPositive = false;
+	else if (ActorLoc.Z < InitialZLocation - OnRotationMoveZMagnitude)
+		bOnRotationMoveZPositive = true;
+
+	if (bOnRotationMoveZPositive)
+		ActorLoc.Z += OnRotationMoveZMagnitude * FloatMovementDelta;
+	else
+		ActorLoc.Z -= OnRotationMoveZMagnitude * FloatMovementDelta;
+
+	SetActorLocation(ActorLoc);
 
 }
 

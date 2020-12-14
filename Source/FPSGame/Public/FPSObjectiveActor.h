@@ -36,6 +36,21 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
 		float PickupDestroyTime = 1.f;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
+		bool bShouldRotate = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects", meta = (EditCondition = "bShouldRotate"))
+		float RotationYawSpeed = 20.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects", meta = (EditCondition = "bShouldRotate"))
+		float OnRotationMoveZMagnitude = 20.0f;
+
+	bool bOnRotationMoveZPositive;
+
+	float InitialZLocation;
+
+	void RotateYawMoveZ(float DeltaTime);
+
 	float PickupTimeAccomulation;
 	FVector InitScale;
 
