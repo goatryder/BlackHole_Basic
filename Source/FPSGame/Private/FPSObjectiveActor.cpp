@@ -29,6 +29,8 @@ AFPSObjectiveActor::AFPSObjectiveActor()
 	PickupTimeAccomulation = PickupDestroyTime;
 	InitScale = GetActorScale3D();
 
+	SetReplicates(true);
+	SetReplicateMovement(true);
 }
 
 // Called when the game starts or when spawned
@@ -67,7 +69,8 @@ void AFPSObjectiveActor::Tick(float DeltaTime)
 
 		if (PickupTimeAccomulation <= 0.f) {
 
-			Destroy();
+			if (HasAuthority())
+				Destroy();
 			bShouldDestroy = false;
 
 		}
@@ -124,10 +127,11 @@ void AFPSObjectiveActor::NotifyActorBeginOverlap(AActor* OtherActor)
 
 
 	AFPSCharacter* MyCharacter = Cast<AFPSCharacter>(OtherActor);
-	
+
 	if (MyCharacter) {
 
-		MyCharacter->bIsCarryingObjective = true;
+		if (HasAuthority())
+			MyCharacter->bIsCarryingObjective = true;
 
 		PlayEffects();
 		bShouldDestroy = true;

@@ -7,6 +7,8 @@
 #include "DrawDebugHelpers.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "FPSGameMode.h"
+#include "Net/UnrealNetwork.h"
+
 
 // Sets default values
 AFPSAIGuard::AFPSAIGuard()
@@ -134,6 +136,13 @@ void AFPSAIGuard::ResetOrientation()
 
 }
 
+void AFPSAIGuard::OnRep_GuardState()
+{
+
+	OnStateChanged(GuardState);
+
+}
+
 void AFPSAIGuard::SetGuardState(EAIState NewState)
 {
 
@@ -146,8 +155,9 @@ void AFPSAIGuard::SetGuardState(EAIState NewState)
 	// GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::White, *FString::Printf(TEXT("NewState: %d"), NewState));
 
 	GuardState = NewState;
+	OnRep_GuardState();
 
-	OnStateChanged(GuardState);
+	// OnStateChanged(GuardState);
 
 }
 
@@ -435,3 +445,9 @@ void AFPSAIGuard::Tick(float DeltaTime)
 
 }
 
+void AFPSAIGuard::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AFPSAIGuard, GuardState);
+}

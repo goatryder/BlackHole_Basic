@@ -29,6 +29,11 @@ AFPSProjectile::AFPSProjectile()
 
 	// Die after 3 seconds by default
 	InitialLifeSpan = 60.0f;
+
+	SetReplicates(true);
+	SetReplicateMovement(true);
+
+
 }
 
 
@@ -39,10 +44,14 @@ void AFPSProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 	{
 		OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
 
-		Destroy();
 	}
 
 	// GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, *FString::Printf(TEXT("Make Noise Projectile, Instiagtor: %s"), *GetInstigator()->GetName()));
 
-	MakeNoise(1.0f, GetInstigator());
+	if (HasAuthority())
+	{
+		MakeNoise(1.0f, GetInstigator());
+		Destroy();
+
+	}
 }

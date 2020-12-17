@@ -54,19 +54,22 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Gameplay")
 	UAnimSequence* FireAnimation;
 
-	UPROPERTY(EditAnywhere, Category = "Grabber")
-	UPhysicsHandleComponent* PhysicsHandleComp;
+	//UPROPERTY(EditAnywhere, Category = "Grabber")
+	//UPhysicsHandleComponent* PhysicsHandleComp;
 
-	UPROPERTY(EditAnywhere, Category = "Grabber")
-	UGrabber* GrabberComp;
+	//UPROPERTY(EditAnywhere, Category = "Grabber")
+	//UGrabber* GrabberComp;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Gameplay")
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Gameplay")
 	bool bIsCarryingObjective;
 
 protected:
 	
 	/** Fires a projectile. */
 	void Fire();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerFire();
 
 	/** Handles moving forward/backward */
 	void MoveForward(float Val);
@@ -82,6 +85,8 @@ public:
 
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return CameraComponent; }
+
+	virtual void Tick(float DeltaTime) override;
 
 };
 

@@ -67,8 +67,11 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "AI")
 		TSubclassOf<AFPSAIGuardController> AIClass = AFPSAIGuardController::StaticClass();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
+	UPROPERTY(ReplicatedUsing=OnRep_GuardState, VisibleAnywhere, BlueprintReadOnly, Category = "AI")
 		EAIState GuardState;
+
+	UFUNCTION()
+		void OnRep_GuardState();
 
 	void SetGuardState(EAIState NewState);
 
